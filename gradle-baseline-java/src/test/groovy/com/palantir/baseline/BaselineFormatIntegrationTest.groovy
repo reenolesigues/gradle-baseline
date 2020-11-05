@@ -124,26 +124,41 @@ class BaselineFormatIntegrationTest extends AbstractPluginTest {
         FileUtils.copyDirectory(inputDir, testedDir)
 
         buildFile << """
+            buildscript {
+                repositories {
+                    maven { url 'https://dl.bintray.com/palantir/releases' }
+                }
+                dependencies {
+                    classpath 'com.palantir.javaformat:gradle-palantir-java-format:1.1.0'
+                }
+            }
+
             plugins {
                 id 'java'
-                id 'com.palantir.java-format'
                 id 'com.palantir.baseline-format'
             }
+            
+            apply plugin: 'com.palantir.java-format'
+            
             repositories {
                 // to resolve the `palantirJavaFormat` configuration
                 maven { url 'https://dl.bintray.com/palantir/releases' }
                 jcenter()
             }
+            
+            project.plugins.each {
+               println it
+            }
         """.stripIndent()
         file('gradle.properties') << "com.palantir.baseline-format.palantir-java-format=true\n"
 
         when:
-        BuildResult result = with(':format', '--info').build()
+        BuildResult result = with('buildEnvironment', ':format', '--info', '--stacktrace').build()
 
         then:
+        println result.output
         result.task(":format").outcome == TaskOutcome.SUCCESS
         result.task(":spotlessApply").outcome == TaskOutcome.SUCCESS
-        println result.output
         assertThatFilesAreTheSame(testedDir, expectedDir)
     }
 
