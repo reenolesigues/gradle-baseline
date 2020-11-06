@@ -127,8 +127,10 @@ class BaselineFormatIntegrationTest extends AbstractPluginTest {
             buildscript {
                 repositories {
                     maven { url 'https://dl.bintray.com/palantir/releases' }
+                    jcenter()
                 }
                 dependencies {
+                    classpath 'com.diffplug.spotless:spotless-plugin-gradle:5.7.0'
                     classpath 'com.palantir.javaformat:gradle-palantir-java-format:1.1.0'
                 }
             }
