@@ -5,6 +5,7 @@ buildscript {
         jcenter()
         gradlePluginPortal()
         maven { url  'https://palantir.bintray.com/releases'}
+        mavenLocal()
     }
 
     dependencies {
@@ -13,7 +14,8 @@ buildscript {
         classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.5'
         classpath 'com.netflix.nebula:nebula-publishing-plugin:17.3.2'
         classpath 'com.netflix.nebula:gradle-info-plugin:9.1.1'
-        classpath 'com.palantir.baseline:gradle-baseline-java:3.41.0'
+//        classpath 'com.palantir.baseline:gradle-baseline-java:3.47.0-1-g176a72a.dirty'
+        classpath 'com.palantir.baseline:gradle-baseline-java:3.47.0'
         classpath 'com.palantir.javaformat:gradle-palantir-java-format:1.0.1'
     }
 }

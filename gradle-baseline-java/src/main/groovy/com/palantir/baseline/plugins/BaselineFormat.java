@@ -18,6 +18,7 @@ package com.palantir.baseline.plugins;
 
 import com.diffplug.gradle.spotless.SpotlessExtension;
 import com.diffplug.spotless.FormatterStep;
+import com.google.common.base.Preconditions;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -25,11 +26,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.api.plugins.JavaPluginConvention;
@@ -48,7 +51,34 @@ class BaselineFormat extends AbstractBaselinePlugin {
     public void apply(Project project) {
         this.project = project;
 
-        project.getPluginManager().apply("com.diffplug.gradle.spotless");
+        Optional<ModuleComponentIdentifier> spotlessDep = project
+                .getRootProject()
+                .getBuildscript()
+                .getConfigurations()
+                .getByName("classpath")
+                .getIncoming()
+                .getArtifacts()
+                .getArtifacts()
+                .stream()
+                .flatMap(art -> (art.getId().getComponentIdentifier() instanceof ModuleComponentIdentifier)
+                        ? Stream.of((ModuleComponentIdentifier) art.getId().getComponentIdentifier())
+                        : Stream.empty())
+                .filter(id -> id.getGroup().equals("com.diffplug.spotless")
+                        && id.getModule().equals("spotless-plugin-gradle"))
+                .findFirst();
+
+        Preconditions.checkState(spotlessDep.isPresent(), "{}: No spotless dep found", project);
+        Preconditions.checkNotNull(
+                spotlessDep.get().getVersion(), "{}: Spotless version is null {}", project, spotlessDep.get());
+
+        if (spotlessDep.get().getVersion().startsWith("5.")) {
+            project.getLogger().lifecycle("{}: Using 'com.diffplug.spotless' for spotless {}", project, spotlessDep);
+            project.getPluginManager().apply("com.diffplug.spotless");
+        } else {
+            project.getLogger()
+                    .lifecycle("{}: Using 'com.diffplug.gradle.spotless' for spotless {}", project, spotlessDep);
+            project.getPluginManager().apply("com.diffplug.gradle.spotless");
+        }
 
         SpotlessExtension spotlessExtension = project.getExtensions().getByType(SpotlessExtension.class);
         // Keep spotless from eagerly configuring all other tasks.  We do the same thing as the enforceCheck
